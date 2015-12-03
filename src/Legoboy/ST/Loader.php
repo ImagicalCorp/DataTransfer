@@ -27,7 +27,7 @@ class Loader extends PluginBase{
 	
 	public function process(){
 		$path = $this->getServer()->getPluginManager()->getPlugin("SimpleAuth")->getDataFolder() . "/players/";
-		foreach(glob($path. "*/*.yml") as $file){
+		foreach(glob($path . "*/*.yml") as $file){
 			$data = new Config($file, Config::YAML);
 			$pname = trim(strtolower(basename($file, ".yml")));
 			$regdate = $data->get("registerdate");
