@@ -27,7 +27,7 @@ class QueryTask extends AsyncTask{
 			$logindate = $data['logindate'];
 			$ip = $data["lastip"];
 			$password = $data['hash'];
-			$result = $this->db->query("INSERT INTO simpleauth_players (name, hash, registerdate, logindate, lastip)
+			$result = $this->getConnection()->query("INSERT INTO simpleauth_players (name, hash, registerdate, logindate, lastip)
 										VALUES ('$pname', '$hash', '$regdate', '$logindate', '$ip')");
 			if($result){
 				self::USERS++;
