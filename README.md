@@ -36,7 +36,7 @@ Just delete those because they are corrupt. If you delete the corrupt ones try a
 If everything is transferred to you're database you need to edit the config.yml of SimpleAuth
 By changing it to this:
 
-dataProvider: mysql
+	dataProvider: mysql
 
 	#for MySQL:
 	dataProviderSettings:
