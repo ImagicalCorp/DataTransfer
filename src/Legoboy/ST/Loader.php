@@ -7,49 +7,34 @@ use pocketmine\utils\Config;
 
 class Loader extends PluginBase{
 	
-	private $db;
-	private $users = 0;
+	public static $db;
 	
-	public function onEnable(){
+	public function onLoad(){
 		if(!file_exists($this->getDataFolder())){
 			@mkdir($this->getDataFolder());
 		}
 		$this->saveDefaultConfig();
-		var_dump($this->getServer()->getPluginManager()->getPlugin("SimpleAuth")->getDataFolder());
-		$this->db = new \mysqli(!is_null($this->getConfig()->get("server-name")) ? $this->getConfig()->get("server-name") : "localhost", $this->getConfig()->get("username"), $this->getConfig()->get("password"), $this->getConfig()->get("simpleauth-dbname"), !is_null($this->getConfig()->get("port")) ? ((int)$this->getConfig()->get("port")) : 3306);
-		// Check connection
-		if($this->db->connect_error){
-			die("Connection failed: " . $this->db->connect_error);
+		$mysql = self::$db = new \mysqli(!is_null($this->getConfig()->get("server-name")) ? $this->getConfig()->get("server-name") : "localhost", $this->getConfig()->get("username"), $this->getConfig()->get("password"), $this->getConfig()->get("simpleauth-dbname"), !is_null($this->getConfig()->get("port")) ? ((int)$this->getConfig()->get("port")) : 3306);
+		if($mysql->connect_error){
+			die("Connection failed: " . $mysql->connect_error);
 			$this->getServer()->getPluginManager()->disablePlugin($this);
+			return;
 		}
+		$resource = $this->getResource("mysql.sql");
+		$mysql->query(stream_get_contents($resource));
+		fclose($resource);
+	}
+	
+	public function onEnable(){
 		$this->process();
+	}
+	
+	public static function getMySQL(){
+		return self::$db;
 	}
 	
 	public function process(){
 		$path = $this->getServer()->getPluginManager()->getPlugin("SimpleAuth")->getDataFolder() . "/players/";
-		foreach(glob($path . "*/*.yml") as $file){
-			$data = new Config($file, Config::YAML);
-			$pname = trim(strtolower(basename($file, ".yml")));
-			$regdate = $data->get("registerdate");
-			$logindate = $data->get("logindate");
-			$ip = $data->get("lastip");
-			$hash = $data->get("hash");
-			/*$this->db->query("UPDATE simpleauth_players SET name = 
-			'" . $pname . "', hash = '" . $hash . "', registerdate = '"
-			. $regdate ."', logindate = '" . $logindate . "', lastip = '"
-			. $ip . "' WHERE ");*/
-			$result = $this->db->query("INSERT INTO simpleauth_players (name, hash, registerdate, logindate, lastip)
-										VALUES ('$pname', '$hash', '$regdate', '$logindate', '$ip')"
-					  );
-			if($result){
-				$this->users++;
-			}else{
-				$this->getServer()->getPluginManager()->disablePlugin($this);
-				$this->getLogger()->critical("Unable to sumbit user to MySQL Database: Unknown Error. Disabling Plugin...");
-			}
-			if($this->users % 100 === 0){
-				$this->getLogger()->notice((string) $this->users . " processed.");
-			}
-		}
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new QueryTask($path));
 	}
 }
